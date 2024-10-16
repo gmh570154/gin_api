@@ -1,0 +1,6 @@
+/.idea/
+.idea/
+.idea
+.DS_Store
+.vscode
+/storage/logs/*
