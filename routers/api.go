@@ -34,7 +34,6 @@ func InitApiRouter() *gin.Engine {
 			variable.ZapLog.Error(consts.GinSetTrustProxyError, zap.Error(err))
 		}
 	} else {
-		variable.ZapLog.Info("test")
 		_ = router.SetTrustedProxies(nil)
 	}
 
@@ -48,7 +47,7 @@ func InitApiRouter() *gin.Engine {
 		requestid.WithGenerator(func() string {
 			return "glb-req-" + uuid.New().String()
 		}),
-		requestid.WithCustomHeaderStrKey("your-customer-key"),
+		requestid.WithCustomHeaderStrKey("global-request-id"),
 	))
 
 	router.GET("/", func(context *gin.Context) {

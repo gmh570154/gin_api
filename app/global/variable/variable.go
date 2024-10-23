@@ -7,8 +7,9 @@ import (
 	"os"
 	"strings"
 
+	ch "gateway_api/app/core/activemq"
+
 	"github.com/core-go/activemq"
-	ah "github.com/core-go/health/activemq/v3"
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 	"github.com/go-stomp/stomp/v3"
@@ -23,6 +24,12 @@ type Config struct {
 	Amq activemq.Config `mapstructure:"amq"`
 }
 
+type MqBody struct {
+	Function_name string
+	Method        string
+	Body          string
+}
+
 var (
 	BasePath           string                  // 定义项目的根目录
 	EventDestroyPrefix = "Destroy_"            //  程序退出时需要销毁的事件前缀
@@ -34,7 +41,7 @@ var (
 	// 全局配置文件
 	ConfigYml       ymlconfig_interf.YmlConfigInterf // 全局配置文件指针
 	ConfigGormv2Yml ymlconfig_interf.YmlConfigInterf // 全局配置文件指针
-	Check           *ah.HealthChecker
+	Check           *ch.HealthChecker
 	MqCon           *stomp.Conn
 	Log             *NewLogType
 	Mqcfg           Config
@@ -44,7 +51,7 @@ type NewLogType struct{}
 
 func (log *NewLogType) Info(c *gin.Context, msg string) {
 	ZapLog.Info(msg, zapcore.Field{
-		Key:    "request-id",
+		Key:    "global-request-id",
 		Type:   zapcore.StringType,
 		String: requestid.Get(c),
 	})
@@ -52,7 +59,7 @@ func (log *NewLogType) Info(c *gin.Context, msg string) {
 
 func (log *NewLogType) Error(c *gin.Context, msg string) {
 	ZapLog.Error(msg, zapcore.Field{
-		Key:    "request-id",
+		Key:    "global-request-id",
 		Type:   zapcore.StringType,
 		String: requestid.Get(c),
 	})
@@ -60,7 +67,7 @@ func (log *NewLogType) Error(c *gin.Context, msg string) {
 
 func (log *NewLogType) Debug(c *gin.Context, msg string) {
 	ZapLog.Debug(msg, zapcore.Field{
-		Key:    "request-id",
+		Key:    "global-request-id",
 		Type:   zapcore.StringType,
 		String: requestid.Get(c),
 	})

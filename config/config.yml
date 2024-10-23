@@ -42,7 +42,7 @@ Logs:
 
 amq:
   addr: localhost:61613
-  username: admin
-  password: admin
-  destination_name: test
-  subscription_name: test
+  username: gmh
+  password: 1qaz!QAZ
+  destination_name: gin
+  subscription_name: app:response

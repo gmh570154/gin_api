@@ -4,6 +4,7 @@ import (
 	// _ "gateway_api/app/core/destroy" // 监听程序退出信号，用于资源的释放
 
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"gateway_api/app/global/my_errors"
@@ -13,19 +14,18 @@ import (
 	"log"
 
 	"gateway_api/app/service/sys_log_hook"
-	// "gateway_api/app/utils/casbin_v2"
-	// "gateway_api/app/utils/gorm_v2"
-	// "gateway_api/app/utils/snow_flake"
 	"gateway_api/app/utils/validator_translation"
-	// "gateway_api/app/utils/websocket/core"
 	"gateway_api/app/utils/yml_config"
 	"gateway_api/app/utils/zap_factory"
 
-	// "log"
 	"os"
 
+	redis "gateway_api/app/utils/redis_factory"
+
 	"github.com/core-go/activemq"
-	ah "github.com/core-go/health/activemq/v3"
+
+	ch "gateway_api/app/core/activemq"
+
 	"github.com/go-stomp/stomp/v3"
 )
 
@@ -62,8 +62,10 @@ func init_mq() {
 	if er2 != nil {
 		log.Fatal("Cannot create a new subscriber. Error: " + er2.Error())
 	}
-	subscriberChecker := ah.NewHealthChecker(variable.Mqcfg.Amq.Addr, "amq_subscriber") // 第二个参数定义订阅的name
-	go func() {                                                                         //异步处理接收的消息
+	ctx := context.Background()
+
+	subscriberChecker := ch.NewHealthChecker(variable.Mqcfg.Amq, "proxy subscriber") // 第二个参数定义订阅的name
+	go func() {                                                                      //异步处理接收的消息
 		for {
 			msg := <-sub.Subscription.C
 			if msg.Err != nil {
@@ -71,16 +73,24 @@ func init_mq() {
 				log.Printf("%s", msg.Err.Error())
 			} else { // todo 需要将消息保存到redis中
 				// 接受消息，执行业务逻辑
-				fmt.Println(string(msg.Body))
-				log.Println("start")
+				log.Printf("mq msg hanlder start, msg: %s", string(msg.Body))
 
-				var v any
+				var v variable.MqBody
 				er1 := json.Unmarshal(msg.Body, &v) //转成json格式
 				if er1 != nil {                     // 一层则打印日志，并忽略消息 --todo
 					log.Printf("cannot unmarshal item: %s. Error: %s", msg.Body, er1.Error())
 					continue
 				}
-				log.Println("end")
+
+				uid := fmt.Sprintf("%x", sha256.Sum256([]byte(v.Function_name+v.Method)))
+
+				res, err3 := redis.RedisClient.Set(ctx, string(uid[:]), msg.Body, -1).Result()
+
+				if err3 != nil {
+					log.Printf("error: %s", err3)
+				}
+
+				log.Printf("mq msg hanlder end, uid: %s, result: %s", uid, res)
 			}
 		}
 
