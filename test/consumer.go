@@ -59,7 +59,7 @@ func main() {
 				json.Unmarshal(v.Body, &resp)
 				resp.Body = "response data"
 				back_context, _ := json.Marshal(resp)
-				time.Sleep(time.Second * 2)
+				// time.Sleep(time.Second * 2)
 				conn.Send("gin::app:response", "text/plain", []byte(back_context))
 			case <-time.After(time.Second * 3330):
 				fmt.Println("Send All data success!4444")

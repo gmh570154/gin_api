@@ -5,6 +5,7 @@ import (
 	"gateway_api/app/global/variable"
 	"gateway_api/app/http/controller/api"
 	"gateway_api/app/http/controller/common"
+	"gateway_api/app/http/middleware/auth"
 	"gateway_api/app/http/middleware/cors"
 	validatorFactory "gateway_api/app/http/validator/core/factory"
 	"gateway_api/app/utils/gin_release"
@@ -42,6 +43,7 @@ func InitApiRouter() *gin.Engine {
 		router.Use(cors.Next())
 	}
 
+	router.Use(auth.Validate())
 	// 使用requestid中间件
 	router.Use(requestid.New(
 		requestid.WithGenerator(func() string {
